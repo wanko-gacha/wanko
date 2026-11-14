@@ -1,0 +1,208 @@
+"""
+わんこガチャ：無名な犬動画を集めて videos.json に保存するスクリプト
+GitHub Actions から1日1回実行されます。
+必要な環境変数: YOUTUBE_API_KEY
+"""
+import datetime as dt
+import json
+import os
+import random
+import re
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
+
+API_KEY = os.environ.get("YOUTUBE_API_KEY", "").strip()
+SEARCHES_PER_RUN = int(os.environ.get("SEARCHES_PER_RUN", "60"))  # 1回の検索=100ユニット(上限 1日10,000)
+MAX_VIEWS = int(os.environ.get("MAX_VIEWS", "1000"))   # これ以下の再生回数だけ残す
+MIN_SEC, MAX_SEC = 5, 15 * 60                         # 5秒〜15分の動画だけ
+MAX_KEEP = 5000                                        # 保存する最大本数
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "videos.json")
+API = "https://www.googleapis.com/youtube/v3/"
+
+# 検索に使う言葉: (言語コード, 表示名, [検索語])
+SEARCH_WORDS = [
+    ("ja", "日本語", ["犬", "子犬", "わんこ", "柴犬", "うちの犬", "愛犬"]),
+    ("en", "英語", ["dog", "puppy", "my dog", "doggo"]),
+    ("es", "スペイン語", ["perro", "perrito", "mi perro"]),
+    ("pt", "ポルトガル語", ["cachorro", "cachorrinho"]),
+    ("fr", "フランス語", ["chien", "chiot", "mon chien"]),
+    ("de", "ドイツ語", ["Hund", "Welpe", "mein Hund"]),
+    ("it", "イタリア語", ["cagnolino", "cucciolo", "il mio cane"]),
+    ("nl", "オランダ語", ["hond", "mijn hond"]),
+    ("pl", "ポーランド語", ["piesek", "szczeniak"]),
+    ("sv", "スウェーデン語", ["hund", "valp"]),
+    ("ru", "ロシア語", ["собака", "щенок", "собачка"]),
+    ("tr", "トルコ語", ["köpek", "köpeğim"]),
+    ("id", "インドネシア語", ["anjing", "anjing lucu"]),
+    ("tl", "タガログ語", ["tuta", "aso ko"]),
+    ("el", "ギリシャ語", ["σκύλος", "σκυλάκι"]),
+    ("vi", "ベトナム語", ["chó", "cún con"]),
+    ("hi", "ヒンディー語", ["कुत्ता", "पिल्ला"]),
+    ("ko", "韓国語", ["강아지", "댕댕이"]),
+    ("zh", "中国語", ["狗狗", "小狗"]),
+    ("th", "タイ語", ["หมา", "ลูกหมา"]),
+    ("ar", "アラビア語", ["كلب", "جرو"]),
+]
+
+# 「犬の動画か」を判定する言葉(タイトル・説明・タグのどれかに含まれていればOK)
+# 空白で区切る言語は単語単位で判定(hundred を Hund と誤判定しないため)
+WORD_MATCH = [
+    "dog", "dogs", "puppy", "puppies", "doggy", "doggie", "doggo", "pup", "pups",
+    "perro", "perros", "perrito", "perritos", "perrita", "cachorro", "cachorros", "cachorrinho",
+    "chien", "chiens", "chienne", "chiot", "chiots",
+    "hund", "hunde", "hündin", "welpe", "welpen", "hundar", "valp",
+    "cagnolino", "cagnolina", "cucciolo", "cuccioli",
+    "hond", "honden", "piesek", "szczeniak",
+    "собака", "собаки", "собачка", "щенок", "щенки", "пёс", "пес",
+    "köpek", "köpeğim", "köpekler", "anjing", "tuta",
+    "σκύλος", "σκυλάκι", "σκυλί", "chó", "cún", "kutta",
+    "corgi", "husky", "shiba", "labrador", "chihuahua", "pomeranian", "dachshund", "poodle", "beagle",
+]
+SUBSTR_MATCH = [
+    "犬", "いぬ", "イヌ", "わんこ", "ワンコ", "わんちゃん", "ワンちゃん", "チワワ", "プードル", "ダックス", "ポメラニアン", "コーギー",
+    "강아지", "댕댕이", "멍멍이", "狗", "หมา", "สุนัข", "कुत्ता", "पिल्ला", "كلب", "جرو",
+]
+EXCLUDE = re.compile(
+    r"hot\s?dogs?|corn\s?dogs?|ホットドッグ|アメリカンドッグ|热狗|핫도그|dogecoin|\bdoge\b|watch\s?_?dogs|"
+    r"reservoir\s+dogs|sea\s?dogs?|dog\s?fight|underdog|犬夜叉|犬神|ポケモン|pokemon|minecraft|fortnite|roblox",
+    re.IGNORECASE,
+)
+WORD_RE = re.compile(r"(?<!\w)(" + "|".join(re.escape(w) for w in WORD_MATCH) + r")(?!\w)", re.IGNORECASE)
+
+FILE_PREFIX = ["IMG_", "MOV_", "VID_", "DSC_", "MVI_", "PXL_"]
+
+
+def api(endpoint, **params):
+    params["key"] = API_KEY
+    url = API + endpoint + "?" + urllib.parse.urlencode(params)
+    try:
+        with urllib.request.urlopen(url, timeout=30) as r:
+            return json.load(r)
+    except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", "ignore")
+        if "quotaExceeded" in body or "dailyLimitExceeded" in body:
+            raise QuotaExceeded()
+        print(f"  APIエラー {e.code}: {body[:300]}", file=sys.stderr)
+        return None
+
+
+class QuotaExceeded(Exception):
+    pass
+
+
+def iso(t):
+    return t.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def make_search():
+    """検索条件をランダムに1つ作る"""
+    lang, label, words = random.choice(SEARCH_WORDS)
+    word = random.choice(words)
+    now = dt.datetime.now(dt.timezone.utc)
+    params = dict(part="snippet", type="video", maxResults=50, safeSearch="strict",
+                  videoEmbeddable="true", relevanceLanguage=lang)
+    strategy = random.choices(["new", "past", "file"], weights=[4, 4, 2])[0]
+    if strategy == "new":       # ここ数日に投稿されたもの
+        params.update(q=word, order="date", publishedAfter=iso(now - dt.timedelta(days=4)))
+    elif strategy == "past":    # 過去のランダムな2週間
+        start = dt.datetime(2009, 1, 1, tzinfo=dt.timezone.utc)
+        span = (now - dt.timedelta(days=30) - start).days
+        a = start + dt.timedelta(days=random.randint(0, span))
+        params.update(q=word, order="date", publishedAfter=iso(a), publishedBefore=iso(a + dt.timedelta(days=14)))
+    else:                       # スマホ撮影のファイル名と組み合わせる
+        p = random.choice(FILE_PREFIX)
+        tail = (f"{random.randint(2012, 2026)}{random.randint(1, 12):02d}" if p in ("VID_", "PXL_")
+                else f"{random.randint(0, 9999):04d}")
+        params.update(q=f"{word} {p}{tail}", order="relevance")
+    return params, lang, label, strategy
+
+
+def seconds(d):
+    m = re.fullmatch(r"P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?", d or "")
+    if not m:
+        return 0
+    days, h, mi, s = (int(x or 0) for x in m.groups())
+    return days * 86400 + h * 3600 + mi * 60 + s
+
+
+def is_dog(text):
+    if EXCLUDE.search(text):
+        return False
+    if WORD_RE.search(text):
+        return True
+    return any(w in text for w in SUBSTR_MATCH)
+
+
+def check_videos(ids, lang, label):
+    data = api("videos", part="snippet,statistics,contentDetails,status", id=",".join(ids), maxResults=50)
+    found = []
+    for v in (data or {}).get("items", []):
+        sn, st, cd, ss = v.get("snippet", {}), v.get("statistics", {}), v.get("contentDetails", {}), v.get("status", {})
+        if "viewCount" not in st:
+            continue
+        views = int(st["viewCount"])
+        sec = seconds(cd.get("duration"))
+        text = " ".join([sn.get("title", ""), sn.get("description", "")[:500], " ".join(sn.get("tags", []))])
+        if (views > MAX_VIEWS or not (MIN_SEC <= sec <= MAX_SEC)
+                or not ss.get("embeddable") or ss.get("privacyStatus") != "public"
+                or sn.get("liveBroadcastContent", "none") != "none"
+                or cd.get("contentRating", {}).get("ytRating") == "ytAgeRestricted"
+                or not is_dog(text)):
+            continue
+        found.append({
+            "id": v["id"],
+            "title": sn.get("title", ""),
+            "channel": sn.get("channelTitle", ""),
+            "views": views,
+            "likes": int(st.get("likeCount", 0) or 0),
+            "comments": int(st.get("commentCount", 0) or 0),
+            "published": sn.get("publishedAt", "")[:10],
+            "sec": sec,
+            "lang": label,
+            "found": dt.date.today().isoformat(),
+        })
+    return found
+
+
+def load():
+    try:
+        with open(OUT, encoding="utf-8") as f:
+            return {v["id"]: v for v in json.load(f)}
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def save(pool):
+    items = sorted(pool.values(), key=lambda v: v.get("found", ""), reverse=True)[:MAX_KEEP]
+    with open(OUT, "w", encoding="utf-8") as f:
+        json.dump(items, f, ensure_ascii=False, separators=(",", ":"))
+    return len(items)
+
+
+def main():
+    if not API_KEY:
+        sys.exit("YOUTUBE_API_KEY が設定されていません")
+    pool = load()
+    before = len(pool)
+    added = 0
+    try:
+        for i in range(SEARCHES_PER_RUN):
+            params, lang, label, strategy = make_search()
+            res = api("search", **params)
+            ids = [it["id"]["videoId"] for it in (res or {}).get("items", []) if it.get("id", {}).get("videoId")]
+            ids = [x for x in ids if x not in pool]
+            got = check_videos(ids, lang, label) if ids else []
+            for v in got:
+                pool[v["id"]] = v
+            added += len(got)
+            print(f"[{i + 1}/{SEARCHES_PER_RUN}] {strategy:4} {params['q']!r:32} 候補{len(ids):2}件 → 採用{len(got):2}件")
+    except QuotaExceeded:
+        print("今日の利用上限に達したので終了します")
+    total = save(pool)
+    print(f"完了: 新規 {added} 本 / 合計 {total} 本(実行前 {before} 本)")
+
+
+if __name__ == "__main__":
+    main()

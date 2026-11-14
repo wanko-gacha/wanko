@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>わんこガチャ</title>
+<meta name="description" content="ボタンを押すと、世界のどこかであまり見られていない犬の動画に出会えます">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#fff8ee;--ink:#3a2a1e;--sub:#8a7360;--accent:#ff7a45;--accent2:#ffb347;--line:#f0e0cc}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);
+    font-family:"M PLUS Rounded 1c",system-ui,sans-serif;display:flex;justify-content:center}
+  main{width:100%;max-width:640px;padding:32px 20px 40px;text-align:center}
+  .paw{font-size:44px;line-height:1}
+  h1{font-size:30px;font-weight:800;margin:8px 0 4px;letter-spacing:.04em}
+  .lead{color:var(--sub);font-size:14px;margin:0 0 24px;line-height:1.7}
+  .mode{display:flex;background:#f6e8d6;border-radius:999px;padding:4px;margin:0 auto 28px;max-width:340px}
+  .mode button{flex:1;border:0;background:transparent;font:inherit;font-size:14px;font-weight:700;
+    color:var(--sub);padding:10px 0;border-radius:999px;cursor:pointer}
+  .mode button.on{background:#fff;color:var(--ink);box-shadow:0 2px 6px rgba(120,80,40,.12)}
+  .gacha{display:flex;align-items:center;justify-content:center;flex-direction:column;
+    width:220px;height:220px;margin:0 auto;border-radius:50%;text-decoration:none;color:#fff;
+    background:radial-gradient(circle at 35% 30%,var(--accent2),var(--accent));
+    box-shadow:0 10px 0 #d9572a,0 18px 30px rgba(217,87,42,.35);
+    transition:transform .08s,box-shadow .08s;user-select:none;-webkit-tap-highlight-color:transparent}
+  .gacha:active{transform:translateY(8px);box-shadow:0 2px 0 #d9572a,0 6px 14px rgba(217,87,42,.3)}
+  .gacha.off{filter:grayscale(1);opacity:.5;pointer-events:none}
+  .gacha .big{font-size:56px;line-height:1}
+  .gacha .label{font-size:22px;font-weight:800;margin-top:8px}
+  .gacha .small{font-size:12px;opacity:.9;margin-top:2px}
+  .pool{margin-top:22px;font-size:12px;color:var(--sub)}
+  .player{margin-top:28px}
+  .player .frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:16px;overflow:hidden;background:#000}
+  .player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .info{margin-top:14px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 16px;text-align:left}
+  .info .t{font-size:16px;font-weight:700;line-height:1.5;word-break:break-word}
+  .info .m{font-size:12px;color:var(--sub);margin-top:6px;line-height:1.7}
+  .info .tag{display:inline-block;font-size:11px;background:#ffe9d6;color:#b4532a;border-radius:6px;padding:2px 8px;margin-right:6px}
+  .info a{color:var(--accent);font-weight:700;font-size:13px}
+  .msg{margin-top:24px;font-size:14px;color:var(--sub);line-height:1.8}
+</style>
+</head>
+<body>
+<main>
+  <div class="paw">🐾</div>
+  <h1>わんこガチャ</h1>
+  <p class="lead">ボタンを押すと、世界のどこかで<br>あまり見られていない犬の動画に出会えます</p>
+
+  <div class="mode">
+    <button type="button" data-max="100">超レア<br><small>100回以下</small></button>
+    <button type="button" data-max="1000" class="on">レア<br><small>1,000回以下</small></button>
+  </div>
+
+  <a id="gacha" class="gacha off" href="#">
+    <span class="big">🐶</span>
+    <span class="label">まわす</span>
+    <span class="small" id="hint">準備中…</span>
+  </a>
+  <div class="pool" id="pool"></div>
+
+  <div class="player" id="player" hidden>
+    <div class="frame" id="frame"></div>
+  </div>
+  <div class="info" id="info" hidden></div>
+  <p class="msg" id="msg" hidden></p>
+</main>
+
+<script>
+const isMobile = matchMedia("(pointer:coarse)").matches || /iPhone|iPad|Android/i.test(navigator.userAgent);
+let all = [], maxViews = 1000, next = null;
+
+function store(k, v){ try{ if(v===undefined) return JSON.parse(localStorage.getItem(k)||"null"); localStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } }
+const seen = new Set(store("wanko-seen") || []);
+
+function candidates(){
+  const list = all.filter(v => v.views <= maxViews);
+  const fresh = list.filter(v => !seen.has(v.id));
+  return fresh.length ? fresh : list;   // 全部見たら最初から
+}
+
+function prepare(){
+  const list = candidates();
+  const btn = document.getElementById("gacha");
+  document.getElementById("pool").textContent = list.length ? `いま ${all.filter(v=>v.views<=maxViews).length.toLocaleString()} 本の中から選ばれます` : "";
+  if(!list.length){ btn.classList.add("off"); document.getElementById("hint").textContent = "動画がありません"; next = null; return; }
+  next = list[Math.floor(Math.random()*list.length)];
+  btn.href = "https://www.youtube.com/watch?v=" + next.id;
+  btn.classList.remove("off");
+  document.getElementById("hint").textContent = isMobile ? "YouTubeアプリが開きます" : "ここで再生します";
+}
+
+function fmtSec(s){ const m = Math.floor(s/60), r = s%60; return m ? `${m}分${r?r+"秒":""}` : `${r}秒`; }
+
+function showInfo(v){
+  const el = document.getElementById("info");
+  el.innerHTML = "";
+  const t = document.createElement("div"); t.className = "t"; t.textContent = v.title; el.appendChild(t);
+  const m = document.createElement("div"); m.className = "m";
+  const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = v.lang; m.appendChild(tag);
+  m.appendChild(document.createTextNode(`${v.channel} ・ 再生 ${v.views.toLocaleString()} 回 ・ ${v.published} 投稿 ・ ${fmtSec(v.sec)}`));
+  el.appendChild(m);
+  const a = document.createElement("a"); a.href = "https://www.youtube.com/watch?v=" + v.id; a.target = "_blank"; a.rel = "noopener";
+  a.textContent = "YouTubeで開く ›"; el.appendChild(a);
+  el.hidden = false;
+}
+
+document.getElementById("gacha").addEventListener("click", e => {
+  if(!next) { e.preventDefault(); return; }
+  const v = next;
+  seen.add(v.id); store("wanko-seen", [...seen].slice(-3000));
+  if(isMobile){
+    // スマホ: リンクをそのまま開く → YouTubeアプリが起動
+    setTimeout(prepare, 300);
+    return;
+  }
+  // PC: このページの中で再生
+  e.preventDefault();
+  const frame = document.getElementById("frame");
+  frame.innerHTML = "";
+  const f = document.createElement("iframe");
+  f.src = `https://www.youtube-nocookie.com/embed/${v.id}?autoplay=1&rel=0`;
+  f.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
+  f.allowFullscreen = true;
+  frame.appendChild(f);
+  document.getElementById("player").hidden = false;
+  showInfo(v);
+  prepare();
+});
+
+document.querySelectorAll(".mode button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".mode button").forEach(x => x.classList.toggle("on", x === b));
+  maxViews = Number(b.dataset.max);
+  prepare();
+}));
+
+fetch("videos.json?t=" + Date.now())
+  .then(r => r.ok ? r.json() : [])
+  .then(list => {
+    all = Array.isArray(list) ? list : [];
+    if(!all.length){
+      const msg = document.getElementById("msg");
+      msg.textContent = "まだ動画が集まっていません。GitHubの「Actions」から収集を実行してください。";
+      msg.hidden = false;
+    }
+    prepare();
+  })
+  .catch(() => { document.getElementById("hint").textContent = "読み込みに失敗しました"; });
+</script>
+</body>
+</html>
