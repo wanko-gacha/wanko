@@ -87,6 +87,18 @@ ANIME_EXCLUDE = re.compile(
 )
 WORD_RE = re.compile(r"(?<!\w)(" + "|".join(re.escape(w) for w in WORD_MATCH) + r")(?!\w)", re.IGNORECASE)
 
+JA_SHARE = 0.3   # 日本語で検索する割合
+KANA = re.compile(r"[\u3040-\u30ff]")   # ひらがな・カタカナ
+
+
+def is_japanese(sn):
+    """日本の動画か: 音声・メタデータの言語が日本語、またはタイトル・説明にかなが含まれる"""
+    langs = (sn.get("defaultAudioLanguage", "") + " " + sn.get("defaultLanguage", "")).lower()
+    if "ja" in langs.split() or langs.startswith("ja"):
+        return True
+    return bool(KANA.search(sn.get("title", "") + sn.get("description", "")[:300]))
+
+
 FILE_PREFIX = ["IMG_", "MOV_", "VID_", "DSC_", "MVI_", "PXL_"]
 
 
@@ -114,7 +126,11 @@ def iso(t):
 
 def make_search():
     """検索条件をランダムに1つ作る"""
-    lang, label, words = random.choice(SEARCH_WORDS)
+    # 日本の動画を増やすため、検索の約3割は日本語で行う
+    if random.random() < JA_SHARE:
+        lang, label, words = SEARCH_WORDS[0]
+    else:
+        lang, label, words = random.choice(SEARCH_WORDS[1:])
     word = random.choice(words)
     now = dt.datetime.now(dt.timezone.utc)
     params = dict(part="snippet", type="video", maxResults=50, safeSearch="strict",
@@ -165,6 +181,7 @@ def check_videos(ids, lang, label):
                 or not ss.get("embeddable") or ss.get("privacyStatus") != "public"
                 or sn.get("liveBroadcastContent", "none") != "none"
                 or cd.get("contentRating", {}).get("ytRating") == "ytAgeRestricted"
+                or ss.get("madeForKids")                     # 子ども向け動画は埋め込みのルールが厳しいため除外
                 or ss.get("containsSyntheticMedia")          # YouTubeの「改変・合成コンテンツ」ラベル
                 or AI_EXCLUDE.search(text)
                 or sn.get("categoryId") in EXCLUDE_CATEGORIES
@@ -180,11 +197,29 @@ def check_videos(ids, lang, label):
             "comments": int(st.get("commentCount", 0) or 0),
             "published": sn.get("publishedAt", "")[:10],
             "sec": sec,
+            "jp": is_japanese(sn),
             "category": sn.get("categoryId", ""),
             "lang": label,
             "found": dt.date.today().isoformat(),
+            "checked": dt.date.today().isoformat(),
         })
     return found
+
+
+def refresh(pool):
+    """保存済みの動画の情報を最新にする(50本で1ユニットと安い)。
+    削除・非公開になった動画や、人気が出て条件を外れた動画はここで取り除かれる。
+    YouTubeの規約上、APIから得たデータは30日以内に更新する必要があるため毎回行う。"""
+    ids = list(pool)
+    fresh = {}
+    for i in range(0, len(ids), 50):
+        batch = ids[i:i + 50]
+        for v in check_videos(batch, "", ""):
+            old = pool[v["id"]]
+            v["lang"] = old.get("lang", "")
+            v["found"] = old.get("found", v["found"])
+            fresh[v["id"]] = v
+    return fresh
 
 
 def load():
@@ -214,6 +249,9 @@ def main():
     before = len(pool)
     added = 0
     try:
+        if pool:
+            pool = refresh(pool)
+            print(f"保存済み {before} 本を更新 → {len(pool)} 本が条件を満たしています")
         for i in range(SEARCHES_PER_RUN):
             params, lang, label, strategy = make_search()
             res = api("search", **params)

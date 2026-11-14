@@ -16,7 +16,8 @@
   .paw{font-size:44px;line-height:1}
   h1{font-size:30px;font-weight:800;margin:8px 0 4px;letter-spacing:.04em}
   .lead{color:var(--sub);font-size:14px;margin:0 0 24px;line-height:1.7}
-  .mode{display:flex;background:#f6e8d6;border-radius:999px;padding:4px;margin:0 auto 28px;max-width:340px}
+  .mode{display:flex;background:#f6e8d6;border-radius:999px;padding:4px;margin:0 auto 12px;max-width:340px}
+  #rarity{margin-bottom:28px}
   .mode button{flex:1;border:0;background:transparent;font:inherit;font-size:14px;font-weight:700;
     color:var(--sub);padding:10px 0;border-radius:999px;cursor:pointer}
   .mode button.on{background:#fff;color:var(--ink);box-shadow:0 2px 6px rgba(120,80,40,.12)}
@@ -40,6 +41,12 @@
   .info .tag{display:inline-block;font-size:11px;background:#ffe9d6;color:#b4532a;border-radius:6px;padding:2px 8px;margin-right:6px}
   .info a{color:var(--accent);font-weight:700;font-size:13px}
   .msg{margin-top:24px;font-size:14px;color:var(--sub);line-height:1.8}
+  .tip{margin-top:40px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 16px}
+  .tip p{margin:0 0 12px;font-size:13px;color:var(--sub);line-height:1.7}
+  .tip a{display:inline-block;background:var(--ink);color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:10px 22px;border-radius:999px}
+  footer{margin-top:40px;padding-top:18px;border-top:1px dashed var(--line);font-size:11px;color:var(--sub);line-height:1.8}
+  footer p{margin:0 0 6px}
+  footer a{color:var(--sub)}
 </style>
 </head>
 <body>
@@ -48,7 +55,12 @@
   <h1>わんこガチャ</h1>
   <p class="lead">ボタンを押すと、世界のどこかで<br>あまり見られていない犬の動画に出会えます</p>
 
-  <div class="mode">
+  <div class="mode" id="region">
+    <button type="button" data-region="jp">🇯🇵 日本の動画だけ</button>
+    <button type="button" data-region="all" class="on">🌏 世界の動画も</button>
+  </div>
+
+  <div class="mode" id="rarity">
     <button type="button" data-max="100">超レア<br><small>100回以下</small></button>
     <button type="button" data-max="1000" class="on">レア<br><small>1,000回以下</small></button>
   </div>
@@ -65,17 +77,40 @@
   </div>
   <div class="info" id="info" hidden></div>
   <p class="msg" id="msg" hidden></p>
+
+  <div class="tip" id="tip" hidden>
+    <p>わんこガチャが気に入ったら<br>応援していただけるとうれしいです🐾</p>
+    <a id="tipLink" href="#" target="_blank" rel="noopener">☕ 応援する</a>
+  </div>
+
+  <footer>
+    <p>このサイトは YouTube API サービスを利用しています。動画はすべて YouTube 上のもので、著作権は各投稿者に帰属します。</p>
+    <p>
+      <a href="privacy.html">利用規約・プライバシーポリシー</a> ／
+      <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube 利用規約</a> ／
+      <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google プライバシーポリシー</a>
+    </p>
+    <p id="contact" hidden><a id="contactLink" href="#" target="_blank" rel="noopener">お問い合わせ(X)</a></p>
+  </footer>
 </main>
 
 <script>
+// ===== ここを書き換えてください =====
+const TIP_URL = "";      // 投げ銭ページのURL(例: "https://ofuse.me/xxxx")。空のままならボタンは表示されません
+const CONTACT_URL = "";  // お問い合わせ用のXのURL(例: "https://x.com/xxxx")。空のままなら表示されません
+// ====================================
+if(TIP_URL){ document.getElementById("tipLink").href = TIP_URL; document.getElementById("tip").hidden = false; }
+if(CONTACT_URL){ document.getElementById("contactLink").href = CONTACT_URL; document.getElementById("contact").hidden = false; }
+
 const isMobile = matchMedia("(pointer:coarse)").matches || /iPhone|iPad|Android/i.test(navigator.userAgent);
-let all = [], maxViews = 1000, next = null;
+let all = [], maxViews = 1000, region = "all", next = null;
 
 function store(k, v){ try{ if(v===undefined) return JSON.parse(localStorage.getItem(k)||"null"); localStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } }
 const seen = new Set(store("wanko-seen") || []);
 
+function matches(v){ return v.views <= maxViews && (region === "all" || v.jp); }
 function candidates(){
-  const list = all.filter(v => v.views <= maxViews);
+  const list = all.filter(matches);
   const fresh = list.filter(v => !seen.has(v.id));
   return fresh.length ? fresh : list;   // 全部見たら最初から
 }
@@ -83,7 +118,7 @@ function candidates(){
 function prepare(){
   const list = candidates();
   const btn = document.getElementById("gacha");
-  document.getElementById("pool").textContent = list.length ? `いま ${all.filter(v=>v.views<=maxViews).length.toLocaleString()} 本の中から選ばれます` : "";
+  document.getElementById("pool").textContent = list.length ? `いま ${all.filter(matches).length.toLocaleString()} 本の中から選ばれます` : "";
   if(!list.length){ btn.classList.add("off"); document.getElementById("hint").textContent = "動画がありません"; next = null; return; }
   next = list[Math.floor(Math.random()*list.length)];
   btn.href = "https://www.youtube.com/watch?v=" + next.id;
@@ -98,7 +133,7 @@ function showInfo(v){
   el.innerHTML = "";
   const t = document.createElement("div"); t.className = "t"; t.textContent = v.title; el.appendChild(t);
   const m = document.createElement("div"); m.className = "m";
-  const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = v.lang; m.appendChild(tag);
+  const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = v.jp ? "日本" : "海外"; m.appendChild(tag);
   m.appendChild(document.createTextNode(`${v.channel} ・ 再生 ${v.views.toLocaleString()} 回 ・ ${v.published} 投稿 ・ ${fmtSec(v.sec)}`));
   el.appendChild(m);
   const a = document.createElement("a"); a.href = "https://www.youtube.com/watch?v=" + v.id; a.target = "_blank"; a.rel = "noopener";
@@ -129,8 +164,16 @@ document.getElementById("gacha").addEventListener("click", e => {
   prepare();
 });
 
-document.querySelectorAll(".mode button").forEach(b => b.addEventListener("click", () => {
-  document.querySelectorAll(".mode button").forEach(x => x.classList.toggle("on", x === b));
+function selectRegion(r){
+  region = r;
+  document.querySelectorAll("#region button").forEach(x => x.classList.toggle("on", x.dataset.region === r));
+  store("wanko-region", r);
+}
+selectRegion(store("wanko-region") || "all");
+document.querySelectorAll("#region button").forEach(b => b.addEventListener("click", () => { selectRegion(b.dataset.region); prepare(); }));
+
+document.querySelectorAll("#rarity button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("#rarity button").forEach(x => x.classList.toggle("on", x === b));
   maxViews = Number(b.dataset.max);
   prepare();
 }));
