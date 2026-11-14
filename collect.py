@@ -69,6 +69,22 @@ EXCLUDE = re.compile(
     r"reservoir\s+dogs|sea\s?dogs?|dog\s?fight|underdog|犬夜叉|犬神|ポケモン|pokemon|minecraft|fortnite|roblox",
     re.IGNORECASE,
 )
+# AIで作られた動画らしい言葉(投稿者がAIラベルを付けていない場合の保険)
+AI_EXCLUDE = re.compile(
+    r"(?<![A-Za-z])a\.?i(?![A-Za-z])|#ai\b|ai[\s-]?generated|ai\s?video|ai\s?art|generative|"
+    r"\bsora\s?(ai|2)\b|openai|\bveo\s?\d\b|google\s?veo|midjourney|runway\s?(ml|gen)|\bkling\b|\bhailuo\b|\bpika\s?labs?\b|stable\s?diffusion|"
+    r"生成AI|AI生成|AI動画|AIで作|AI作成|人工知能|AI生成視頻|AI 생성|인공지능",
+    re.IGNORECASE,
+)
+# 除外するYouTubeカテゴリ(1=映画とアニメ、31=アニメ)
+EXCLUDE_CATEGORIES = {"1", "31"}
+# アニメ・イラスト系らしい言葉
+ANIME_EXCLUDE = re.compile(
+    r"anime|animation|animated|cartoon|\bmmd\b|blender|\b3d\s?(model|anim)|\bvtuber\b|"
+    r"アニメ|漫画|マンガ|まんが|イラスト|手描き|ゆっくり実況|ボイスロイド|"
+    r"动画片|动漫|卡通|애니|만화|caricatura|dibujos animados|dessin animé|zeichentrick|мультик|мультфильм",
+    re.IGNORECASE,
+)
 WORD_RE = re.compile(r"(?<!\w)(" + "|".join(re.escape(w) for w in WORD_MATCH) + r")(?!\w)", re.IGNORECASE)
 
 FILE_PREFIX = ["IMG_", "MOV_", "VID_", "DSC_", "MVI_", "PXL_"]
@@ -149,6 +165,10 @@ def check_videos(ids, lang, label):
                 or not ss.get("embeddable") or ss.get("privacyStatus") != "public"
                 or sn.get("liveBroadcastContent", "none") != "none"
                 or cd.get("contentRating", {}).get("ytRating") == "ytAgeRestricted"
+                or ss.get("containsSyntheticMedia")          # YouTubeの「改変・合成コンテンツ」ラベル
+                or AI_EXCLUDE.search(text)
+                or sn.get("categoryId") in EXCLUDE_CATEGORIES
+                or ANIME_EXCLUDE.search(text)
                 or not is_dog(text)):
             continue
         found.append({
@@ -160,6 +180,7 @@ def check_videos(ids, lang, label):
             "comments": int(st.get("commentCount", 0) or 0),
             "published": sn.get("publishedAt", "")[:10],
             "sec": sec,
+            "category": sn.get("categoryId", ""),
             "lang": label,
             "found": dt.date.today().isoformat(),
         })
@@ -185,6 +206,11 @@ def main():
     if not API_KEY:
         sys.exit("YOUTUBE_API_KEY が設定されていません")
     pool = load()
+    # 以前集めた動画からも、AI・アニメらしいもの、除外カテゴリのものを取り除く
+    pool = {k: v for k, v in pool.items()
+            if not AI_EXCLUDE.search(v.get("title", ""))
+            and not ANIME_EXCLUDE.search(v.get("title", ""))
+            and v.get("category") not in EXCLUDE_CATEGORIES}
     before = len(pool)
     added = 0
     try:
