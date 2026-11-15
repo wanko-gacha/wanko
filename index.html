@@ -8,64 +8,66 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#fff8ee;--ink:#3a2a1e;--sub:#8a7360;--accent:#ff7a45;--accent2:#ffb347;--line:#f0e0cc;--seg:#f6e8d6}
+  :root{--s:1;--bg:#fff8ee;--ink:#3a2a1e;--sub:#8a7360;--accent:#ff7a45;--accent2:#ffb347;--line:#f0e0cc;--seg:#f6e8d6}
   *{box-sizing:border-box}
   body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);
     font-family:"M PLUS Rounded 1c",system-ui,sans-serif;display:flex;justify-content:center}
   main{width:100%;max-width:520px;padding:calc(14px + env(safe-area-inset-top)) 16px calc(90px + env(safe-area-inset-bottom));text-align:center}
 
   /* ヘッダー */
-  h1{font-size:24px;font-weight:800;margin:0;letter-spacing:.04em}
-  h1 span{font-size:20px;margin-right:4px}
-  .lead{color:var(--sub);font-size:12px;margin:4px 0 12px;line-height:1.6}
+  h1{font-size:calc(24px*var(--s));font-weight:800;margin:0;letter-spacing:.04em}
+  h1 span{font-size:calc(20px*var(--s));margin-right:calc(4px*var(--s))}
+  .lead{color:var(--sub);font-size:calc(12px*var(--s));margin:calc(4px*var(--s)) 0 calc(12px*var(--s));line-height:1.6}
 
   /* 切り替え */
-  .mode{display:flex;background:var(--seg);border-radius:999px;padding:3px;margin:0 auto 6px;max-width:360px}
-  .mode button{flex:1;border:0;background:transparent;font:inherit;font-size:13px;font-weight:700;
-    color:var(--sub);padding:7px 0;border-radius:999px;cursor:pointer;-webkit-tap-highlight-color:transparent}
-  .mode button small{font-size:10px;font-weight:400;margin-left:2px}
-  .mode button.on{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(120,80,40,.12)}
+  .mode{display:flex;background:var(--seg);border-radius:calc(999px*var(--s));padding:calc(3px*var(--s));margin:0 auto calc(6px*var(--s));max-width:calc(360px*var(--s))}
+  .mode button{flex:1;border:0;background:transparent;font:inherit;font-size:calc(13px*var(--s));font-weight:700;
+    color:var(--sub);padding:calc(7px*var(--s)) 0;border-radius:calc(999px*var(--s));cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .mode button small{font-size:calc(10px*var(--s));font-weight:400;margin-left:2px}
+  .mode button.on{background:#fff;color:var(--ink);box-shadow:0 1px calc(4px*var(--s)) rgba(120,80,40,.12)}
 
   /* ガチャボタン */
   .gacha{display:flex;align-items:center;justify-content:center;flex-direction:column;
-    width:clamp(132px,38vw,168px);height:clamp(132px,38vw,168px);margin:14px auto 18px;border-radius:50%;text-decoration:none;color:#fff;
+    width:min(calc(150px*var(--s)),62vw);height:min(calc(150px*var(--s)),62vw);margin:calc(14px*var(--s)) auto calc(18px*var(--s));border-radius:50%;text-decoration:none;color:#fff;
     background:radial-gradient(circle at 35% 30%,var(--accent2),var(--accent));
-    box-shadow:0 7px 0 #d9572a,0 12px 22px rgba(217,87,42,.3);
+    box-shadow:0 calc(7px*var(--s)) 0 #d9572a,0 calc(12px*var(--s)) calc(22px*var(--s)) rgba(217,87,42,.3);
     transition:transform .08s,box-shadow .08s;user-select:none;-webkit-tap-highlight-color:transparent}
-  .gacha:active{transform:translateY(6px);box-shadow:0 1px 0 #d9572a,0 4px 10px rgba(217,87,42,.3)}
+  .gacha:active{transform:translateY(6px);box-shadow:0 1px 0 #d9572a,0 calc(4px*var(--s)) calc(10px*var(--s)) rgba(217,87,42,.3)}
   .gacha.off{filter:grayscale(1);opacity:.5;pointer-events:none}
-  .gacha .big{font-size:40px;line-height:1}
-  .gacha .label{font-size:19px;font-weight:800;margin-top:4px}
-  .gacha .small{font-size:10px;opacity:.9;margin-top:1px}
+  .gacha .big{font-size:calc(40px*var(--s));line-height:1}
+  .gacha .label{font-size:calc(19px*var(--s));font-weight:800;margin-top:calc(4px*var(--s))}
+  .gacha .small{font-size:calc(10px*var(--s));opacity:.9;margin-top:1px}
 
   /* PCのプレーヤー */
-  .player{margin-bottom:10px}
-  .player .frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000}
+  .player{margin-bottom:calc(10px*var(--s))}
+  .player .frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:calc(14px*var(--s));overflow:hidden;background:#000}
   .player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
 
   /* 動画の詳細 */
-  .info{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;text-align:left}
-  .info .t{font-size:14px;font-weight:700;line-height:1.45;word-break:break-word;
-    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  .info .m{font-size:11px;color:var(--sub);margin-top:3px;line-height:1.5}
-  .info .tag{display:inline-block;font-size:10px;background:#ffe9d6;color:#b4532a;border-radius:5px;padding:0 6px;margin-right:4px}
-  .info .acts{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
-  .info .acts a{color:var(--accent);font-weight:700;font-size:12px}
-  .info .ng{border:1px solid var(--line);background:#fff;color:var(--sub);font:inherit;font-size:11px;font-weight:700;
-    padding:4px 10px;border-radius:999px;cursor:pointer}
+  .info{background:#fff;border:1px solid var(--line);border-radius:calc(14px*var(--s));padding:calc(10px*var(--s)) calc(12px*var(--s));text-align:left}
+  .info .t{font-size:calc(14px*var(--s));font-weight:700;line-height:1.45;word-break:break-word;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.9em}
+  .info .m{font-size:calc(11px*var(--s));color:var(--sub);margin-top:calc(3px*var(--s));line-height:1.5;min-height:1.5em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .info .tag{display:inline-block;font-size:calc(10px*var(--s));background:#ffe9d6;color:#b4532a;border-radius:calc(5px*var(--s));padding:0 calc(6px*var(--s));margin-right:calc(4px*var(--s))}
+  .info .acts{display:flex;justify-content:space-between;align-items:center;margin-top:calc(6px*var(--s))}
+  .info .acts a{color:var(--accent);font-weight:700;font-size:calc(12px*var(--s))}
+  .info .ng{border:1px solid var(--line);background:#fff;color:var(--sub);font:inherit;font-size:calc(11px*var(--s));font-weight:700;
+    padding:calc(4px*var(--s)) calc(10px*var(--s));border-radius:calc(999px*var(--s));cursor:pointer}
   .info.blocked .t,.info.blocked .m{opacity:.4;text-decoration:line-through}
 
   /* おまけ */
-  .omake{margin-top:8px;background:#fff;border:2px dashed var(--accent2);border-radius:14px;padding:8px 10px;
-    display:flex;align-items:center;gap:10px;text-align:left}
-  .omake-emoji{font-size:28px;line-height:1}
+  .omake{margin-top:calc(8px*var(--s));background:#fff;border:2px dashed var(--accent2);border-radius:calc(14px*var(--s));padding:calc(8px*var(--s)) calc(10px*var(--s));
+    display:flex;align-items:center;gap:calc(10px*var(--s));text-align:left}
+  .omake-emoji{font-size:calc(26px*var(--s));line-height:1}
   .omake-text{flex:1;min-width:0}
-  .omake-head{font-size:10px;font-weight:700;color:#b4532a}
-  .omake-head .pr{font-weight:400;color:var(--sub);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-left:4px}
-  .omake-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .omake-comment{font-size:10px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .omake-btn{flex:none;background:var(--accent);color:#fff;text-decoration:none;font-weight:700;font-size:12px;padding:7px 12px;border-radius:999px}
+  .omake-head{font-size:calc(10px*var(--s));font-weight:700;color:#b4532a}
+  .omake-head .pr{font-weight:400;color:var(--sub);border:1px solid var(--line);border-radius:calc(3px*var(--s));padding:0 calc(4px*var(--s));margin-left:calc(4px*var(--s))}
+  .omake-name{font-size:calc(13px*var(--s));font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .omake-comment{font-size:calc(10px*var(--s));color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .omake-btn{flex:none;background:var(--accent);color:#fff;text-decoration:none;font-weight:700;font-size:calc(12px*min(var(--s),1.15));padding:calc(8px*var(--s)) calc(11px*min(var(--s),1.15));border-radius:calc(999px*var(--s))}
 
+  .info.empty .t{color:var(--sub);font-weight:400}
+  .info.empty .acts,.omake.empty .omake-btn{visibility:hidden}
   .msg{margin-top:12px;font-size:13px;color:var(--sub);line-height:1.8}
 
   /* 下のほう */
@@ -101,8 +103,8 @@
     <div class="frame" id="frame"></div>
   </div>
 
-  <div class="info" id="info" hidden>
-    <div class="t" id="infoTitle"></div>
+  <div class="info empty" id="info">
+    <div class="t" id="infoTitle">まわすと、ここにわんこの動画が出るよ</div>
     <div class="m" id="infoMeta"></div>
     <div class="acts">
       <a id="infoLink" href="#" target="_blank" rel="noopener">YouTubeで見る ›</a>
@@ -110,12 +112,12 @@
     </div>
   </div>
 
-  <div class="omake" id="omake" hidden>
-    <div class="omake-emoji" id="omakeEmoji"></div>
+  <div class="omake empty" id="omake">
+    <div class="omake-emoji" id="omakeEmoji">🎁</div>
     <div class="omake-text">
       <div class="omake-head">🎁 今回のおまけ<span class="pr">PR</span></div>
-      <div class="omake-name" id="omakeName"></div>
-      <div class="omake-comment" id="omakeComment"></div>
+      <div class="omake-name" id="omakeName">おまけもついてくるよ</div>
+      <div class="omake-comment" id="omakeComment">なにが出るかはおたのしみ</div>
     </div>
     <a class="omake-btn" id="omakeLink" href="#" target="_blank" rel="noopener sponsored">見てみる</a>
   </div>
@@ -140,14 +142,14 @@
 </main>
 
 <script>
-// ===== ここを書き換えてください =====
-const TIP_URL = "";      // 投げ銭ページのURL(例: "https://ofuse.me/xxxx")。空のままならボタンは表示されません
-const CONTACT_URL = "";  // お問い合わせ用のXのURL(例: "https://x.com/xxxx")。空のままなら表示されません
-const REPORT_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeOKytNcfs14LaVHlBxl3biCFI9N-pEPpZ2aOSJvhIGVIOnaw/viewform?usp=pp_url&entry.2127648784=test";  // 「犬じゃなかった」を集めるGoogleフォームの「事前入力したURL」。空のままなら送信しません
-// ====================================
+// 設定は config.json に書く(index.html を入れ替えても消えないように)
 const $ = id => document.getElementById(id);
-if(TIP_URL){ $("tipLink").href = TIP_URL; $("tip").hidden = false; }
-if(CONTACT_URL){ $("contactLink").href = CONTACT_URL; $("contact").hidden = false; }
+let REPORT_FORM_URL = "";
+fetch("config.json?t=" + Date.now()).then(r => r.ok ? r.json() : {}).then(c => {
+  if(c.tipUrl){ $("tipLink").href = c.tipUrl; $("tip").hidden = false; }
+  if(c.contactUrl){ $("contactLink").href = c.contactUrl; $("contact").hidden = false; }
+  REPORT_FORM_URL = c.reportFormUrl || "";
+}).catch(() => {});
 
 const isMobile = matchMedia("(pointer:coarse)").matches || /iPhone|iPad|Android/i.test(navigator.userAgent);
 let all = [], maxViews = 1000, region = "all", next = null, current = null;
@@ -189,7 +191,7 @@ function showInfo(v){
   $("infoMeta").appendChild(document.createTextNode(`${v.channel} ・ 再生${v.views.toLocaleString()}回 ・ ${v.published} ・ ${fmtSec(v.sec)}`));
   $("infoLink").href = "https://www.youtube.com/watch?v=" + v.id;
   setBlockedView(myBlocked.has(v.id));
-  $("info").hidden = false;
+  $("info").classList.remove("empty");
 }
 function setBlockedView(on){
   $("info").classList.toggle("blocked", on);
@@ -229,6 +231,7 @@ function showOmake(g){
   $("omakeName").textContent = g.name;
   $("omakeComment").textContent = g.comment || "";
   $("omakeLink").href = g.link;
+  $("omake").classList.remove("empty");
   $("omake").hidden = false;
 }
 function pickOmake(){ return goods.length ? goods[Math.floor(Math.random()*goods.length)] : null; }
@@ -274,6 +277,30 @@ document.querySelectorAll("#rarity button").forEach(b => b.addEventListener("cli
   prepare();
 }));
 
+// ===== 画面にぴったり収める(スマホ) =====
+// 「今回のおまけ」の下端が、ちょうど画面の下(Safariのバーの上)に来るように全体の大きさを調整する
+function fit(){
+  const root = document.documentElement;
+  if(!isMobile){ root.style.setProperty("--s", 1); return; }
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const standalone = navigator.standalone || matchMedia("(display-mode: standalone)").matches;
+  const reserve = standalone ? 20 : (isIOS ? 92 : 16);   // 画面下のバーの分
+  const target = innerHeight - reserve;
+  const top = parseFloat(getComputedStyle(document.querySelector("main")).paddingTop) || 0;
+  const last = !$("omake").hidden ? $("omake") : $("info");
+  let s = 1;
+  root.style.setProperty("--s", s);
+  for(let i = 0; i < 4; i++){
+    const bottom = last.getBoundingClientRect().bottom + scrollY;
+    s = Math.min(1.7, Math.max(0.8, s * (target - top) / (bottom - top)));
+    root.style.setProperty("--s", s.toFixed(3));
+  }
+}
+fit();
+addEventListener("resize", fit);
+addEventListener("orientationchange", () => setTimeout(fit, 300));
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+
 // ===== 読み込み =====
 fetch("goods.json?t=" + Date.now())
   .then(r => r.ok ? r.json() : {})
@@ -281,8 +308,10 @@ fetch("goods.json?t=" + Date.now())
     const tag = (d && d.amazonTag || "").trim();
     goods = ((d && d.items) || []).map(g => ({...g, link: goodsUrl(g, tag)})).filter(g => g.link && g.name);
     if(tag) $("amazonNote").hidden = false;
+    if(!goods.length) $("omake").hidden = true;
+    fit();
   })
-  .catch(() => {});
+  .catch(() => { $("omake").hidden = true; fit(); });
 
 // YouTubeから戻ってきたとき、さっきの動画とおまけをもう一度出す
 const last = session("wanko-last");
