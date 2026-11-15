@@ -21,6 +21,10 @@ MAX_KEEP = 5000                                        # 保存する最大本�
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "videos.json")
 API = "https://www.googleapis.com/youtube/v3/"
 
+# 「犬じゃなかった」の集計(Googleスプレッドシートを「ウェブに公開」したCSVのURL)
+REPORT_CSV_URL = ""       # 例: "https://docs.google.com/spreadsheets/d/e/xxxx/pub?gid=0&single=true&output=csv"
+REPORT_THRESHOLD = 2      # この回数以上「犬じゃなかった」が押された動画を除外する
+
 # 検索に使う言葉: (言語コード, 表示名, [検索語])
 SEARCH_WORDS = [
     ("ja", "日本語", ["犬", "子犬", "わんこ", "柴犬", "うちの犬", "愛犬"]),
@@ -222,6 +226,46 @@ def refresh(pool):
     return fresh
 
 
+def load_blocked():
+    """blocked.txt に書いた動画(URLかID)を読み込む"""
+    path = os.path.join(os.path.dirname(OUT), "blocked.txt")
+    ids = set()
+    try:
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                line = line.split("#")[0].strip()
+                m = re.search(r"(?:v=|youtu\.be/|shorts/)([\w-]{11})", line)
+                if m:
+                    ids.add(m.group(1))
+                elif line:
+                    ids.add(line)
+    except FileNotFoundError:
+        pass
+    return ids
+
+
+def load_reported():
+    """Googleフォームに集まった「犬じゃなかった」を数え、しきい値以上の動画IDを返す"""
+    if not REPORT_CSV_URL:
+        return set()
+    import csv, io, collections
+    try:
+        with urllib.request.urlopen(REPORT_CSV_URL, timeout=30) as r:
+            rows = list(csv.reader(io.StringIO(r.read().decode("utf-8-sig"))))
+    except Exception as e:
+        print(f"  報告の読み込みに失敗: {e}", file=sys.stderr)
+        return set()
+    counts = collections.Counter()
+    for row in rows[1:]:                 # 1行目は見出し、2列目が動画ID
+        if len(row) > 1:
+            m = re.search(r"[\w-]{11}", row[1])
+            if m:
+                counts[m.group(0)] += 1
+    out = {k for k, n in counts.items() if n >= REPORT_THRESHOLD}
+    print(f"「犬じゃなかった」の報告: {sum(counts.values())} 件 → {len(out)} 本を除外")
+    return out
+
+
 def load():
     try:
         with open(OUT, encoding="utf-8") as f:
@@ -241,6 +285,8 @@ def main():
     if not API_KEY:
         sys.exit("YOUTUBE_API_KEY が設定されていません")
     pool = load()
+    blocked = load_blocked() | load_reported()
+    pool = {k: v for k, v in pool.items() if k not in blocked}
     # 以前集めた動画からも、AI・アニメらしいもの、除外カテゴリのものを取り除く
     pool = {k: v for k, v in pool.items()
             if not AI_EXCLUDE.search(v.get("title", ""))
@@ -256,7 +302,7 @@ def main():
             params, lang, label, strategy = make_search()
             res = api("search", **params)
             ids = [it["id"]["videoId"] for it in (res or {}).get("items", []) if it.get("id", {}).get("videoId")]
-            ids = [x for x in ids if x not in pool]
+            ids = [x for x in ids if x not in pool and x not in blocked]
             got = check_videos(ids, lang, label) if ids else []
             for v in got:
                 pool[v["id"]] = v

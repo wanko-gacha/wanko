@@ -2,109 +2,133 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>わんこガチャ</title>
-<meta name="description" content="ボタンを押すと、世界のどこかであまり見られていない犬の動画に出会えます">
+<meta name="description" content="ボタンを押すと、世界のどこかであまり見られていない犬の動画に出会えるよ">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#fff8ee;--ink:#3a2a1e;--sub:#8a7360;--accent:#ff7a45;--accent2:#ffb347;--line:#f0e0cc}
+  :root{--bg:#fff8ee;--ink:#3a2a1e;--sub:#8a7360;--accent:#ff7a45;--accent2:#ffb347;--line:#f0e0cc;--seg:#f6e8d6}
   *{box-sizing:border-box}
   body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);
     font-family:"M PLUS Rounded 1c",system-ui,sans-serif;display:flex;justify-content:center}
-  main{width:100%;max-width:640px;padding:32px 20px 40px;text-align:center}
-  .paw{font-size:44px;line-height:1}
-  h1{font-size:30px;font-weight:800;margin:8px 0 4px;letter-spacing:.04em}
-  .lead{color:var(--sub);font-size:14px;margin:0 0 24px;line-height:1.7}
-  .mode{display:flex;background:#f6e8d6;border-radius:999px;padding:4px;margin:0 auto 12px;max-width:340px}
-  #rarity{margin-bottom:28px}
-  .mode button{flex:1;border:0;background:transparent;font:inherit;font-size:14px;font-weight:700;
-    color:var(--sub);padding:10px 0;border-radius:999px;cursor:pointer}
-  .mode button.on{background:#fff;color:var(--ink);box-shadow:0 2px 6px rgba(120,80,40,.12)}
+  main{width:100%;max-width:520px;padding:calc(14px + env(safe-area-inset-top)) 16px calc(90px + env(safe-area-inset-bottom));text-align:center}
+
+  /* ヘッダー */
+  h1{font-size:24px;font-weight:800;margin:0;letter-spacing:.04em}
+  h1 span{font-size:20px;margin-right:4px}
+  .lead{color:var(--sub);font-size:12px;margin:4px 0 12px;line-height:1.6}
+
+  /* 切り替え */
+  .mode{display:flex;background:var(--seg);border-radius:999px;padding:3px;margin:0 auto 6px;max-width:360px}
+  .mode button{flex:1;border:0;background:transparent;font:inherit;font-size:13px;font-weight:700;
+    color:var(--sub);padding:7px 0;border-radius:999px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+  .mode button small{font-size:10px;font-weight:400;margin-left:2px}
+  .mode button.on{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(120,80,40,.12)}
+
+  /* ガチャボタン */
   .gacha{display:flex;align-items:center;justify-content:center;flex-direction:column;
-    width:220px;height:220px;margin:0 auto;border-radius:50%;text-decoration:none;color:#fff;
+    width:clamp(132px,38vw,168px);height:clamp(132px,38vw,168px);margin:14px auto 18px;border-radius:50%;text-decoration:none;color:#fff;
     background:radial-gradient(circle at 35% 30%,var(--accent2),var(--accent));
-    box-shadow:0 10px 0 #d9572a,0 18px 30px rgba(217,87,42,.35);
+    box-shadow:0 7px 0 #d9572a,0 12px 22px rgba(217,87,42,.3);
     transition:transform .08s,box-shadow .08s;user-select:none;-webkit-tap-highlight-color:transparent}
-  .gacha:active{transform:translateY(8px);box-shadow:0 2px 0 #d9572a,0 6px 14px rgba(217,87,42,.3)}
+  .gacha:active{transform:translateY(6px);box-shadow:0 1px 0 #d9572a,0 4px 10px rgba(217,87,42,.3)}
   .gacha.off{filter:grayscale(1);opacity:.5;pointer-events:none}
-  .gacha .big{font-size:56px;line-height:1}
-  .gacha .label{font-size:22px;font-weight:800;margin-top:8px}
-  .gacha .small{font-size:12px;opacity:.9;margin-top:2px}
-  .pool{margin-top:22px;font-size:12px;color:var(--sub)}
-  .player{margin-top:28px}
-  .player .frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:16px;overflow:hidden;background:#000}
+  .gacha .big{font-size:40px;line-height:1}
+  .gacha .label{font-size:19px;font-weight:800;margin-top:4px}
+  .gacha .small{font-size:10px;opacity:.9;margin-top:1px}
+
+  /* PCのプレーヤー */
+  .player{margin-bottom:10px}
+  .player .frame{position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000}
   .player iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-  .info{margin-top:14px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 16px;text-align:left}
-  .info .t{font-size:16px;font-weight:700;line-height:1.5;word-break:break-word}
-  .info .m{font-size:12px;color:var(--sub);margin-top:6px;line-height:1.7}
-  .info .tag{display:inline-block;font-size:11px;background:#ffe9d6;color:#b4532a;border-radius:6px;padding:2px 8px;margin-right:6px}
-  .info a{color:var(--accent);font-weight:700;font-size:13px}
-  .msg{margin-top:24px;font-size:14px;color:var(--sub);line-height:1.8}
-  .tip{margin-top:40px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 16px}
-  .tip p{margin:0 0 12px;font-size:13px;color:var(--sub);line-height:1.7}
-  .tip a{display:inline-block;background:var(--ink);color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:10px 22px;border-radius:999px}
-  .omake{margin-top:14px;background:#fff;border:2px dashed var(--accent2);border-radius:16px;padding:14px 16px;text-align:left}
-  .omake-head{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700;color:#b4532a}
-  .omake .pr{font-size:10px;color:var(--sub);border:1px solid var(--line);border-radius:4px;padding:0 6px}
-  .omake-body{display:flex;gap:12px;align-items:center;margin:10px 0 12px}
-  .omake-emoji{font-size:40px;line-height:1}
-  .omake-name{font-size:16px;font-weight:700}
-  .omake-comment{font-size:12px;color:var(--sub);margin-top:2px}
-  .omake-btn{display:block;text-align:center;background:var(--accent);color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px;border-radius:999px}
-  footer{margin-top:40px;padding-top:18px;border-top:1px dashed var(--line);font-size:11px;color:var(--sub);line-height:1.8}
+
+  /* 動画の詳細 */
+  .info{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px;text-align:left}
+  .info .t{font-size:14px;font-weight:700;line-height:1.45;word-break:break-word;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .info .m{font-size:11px;color:var(--sub);margin-top:3px;line-height:1.5}
+  .info .tag{display:inline-block;font-size:10px;background:#ffe9d6;color:#b4532a;border-radius:5px;padding:0 6px;margin-right:4px}
+  .info .acts{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+  .info .acts a{color:var(--accent);font-weight:700;font-size:12px}
+  .info .ng{border:1px solid var(--line);background:#fff;color:var(--sub);font:inherit;font-size:11px;font-weight:700;
+    padding:4px 10px;border-radius:999px;cursor:pointer}
+  .info.blocked .t,.info.blocked .m{opacity:.4;text-decoration:line-through}
+
+  /* おまけ */
+  .omake{margin-top:8px;background:#fff;border:2px dashed var(--accent2);border-radius:14px;padding:8px 10px;
+    display:flex;align-items:center;gap:10px;text-align:left}
+  .omake-emoji{font-size:28px;line-height:1}
+  .omake-text{flex:1;min-width:0}
+  .omake-head{font-size:10px;font-weight:700;color:#b4532a}
+  .omake-head .pr{font-weight:400;color:var(--sub);border:1px solid var(--line);border-radius:3px;padding:0 4px;margin-left:4px}
+  .omake-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .omake-comment{font-size:10px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .omake-btn{flex:none;background:var(--accent);color:#fff;text-decoration:none;font-weight:700;font-size:12px;padding:7px 12px;border-radius:999px}
+
+  .msg{margin-top:12px;font-size:13px;color:var(--sub);line-height:1.8}
+
+  /* 下のほう */
+  .tip{margin-top:36px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px}
+  .tip p{margin:0 0 10px;font-size:12px;color:var(--sub);line-height:1.7}
+  .tip a{display:inline-block;background:var(--ink);color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:9px 20px;border-radius:999px}
+  footer{margin-top:32px;padding-top:14px;border-top:1px dashed var(--line);font-size:10px;color:var(--sub);line-height:1.8}
   footer p{margin:0 0 6px}
   footer a{color:var(--sub)}
 </style>
 </head>
 <body>
 <main>
-  <div class="paw">🐾</div>
-  <h1>わんこガチャ</h1>
-  <p class="lead">ボタンを押すと、世界のどこかで<br>あまり見られていない犬の動画に出会えます</p>
+  <h1><span>🐾</span>わんこガチャ</h1>
+  <p class="lead">世界のどこかで、あまり見られていない<br>わんこの動画に出会えるよ</p>
 
   <div class="mode" id="region">
-    <button type="button" data-region="jp">🇯🇵 日本の動画だけ</button>
-    <button type="button" data-region="all" class="on">🌏 世界の動画も</button>
+    <button type="button" data-region="jp">🇯🇵 日本だけ</button>
+    <button type="button" data-region="all" class="on">🌏 世界も</button>
   </div>
-
   <div class="mode" id="rarity">
-    <button type="button" data-max="100">超レア<br><small>100回以下</small></button>
-    <button type="button" data-max="1000" class="on">レア<br><small>1,000回以下</small></button>
+    <button type="button" data-max="100">超レア<small>100回以下</small></button>
+    <button type="button" data-max="1000" class="on">レア<small>1,000回以下</small></button>
   </div>
 
   <a id="gacha" class="gacha off" href="#">
     <span class="big">🐶</span>
     <span class="label">まわす</span>
-    <span class="small" id="hint">準備中…</span>
+    <span class="small" id="hint">じゅんび中…</span>
   </a>
-  <div class="pool" id="pool"></div>
 
   <div class="player" id="player" hidden>
     <div class="frame" id="frame"></div>
   </div>
-  <div class="info" id="info" hidden></div>
+
+  <div class="info" id="info" hidden>
+    <div class="t" id="infoTitle"></div>
+    <div class="m" id="infoMeta"></div>
+    <div class="acts">
+      <a id="infoLink" href="#" target="_blank" rel="noopener">YouTubeで見る ›</a>
+      <button type="button" class="ng" id="ngBtn">🙅 犬じゃなかった</button>
+    </div>
+  </div>
 
   <div class="omake" id="omake" hidden>
-    <div class="omake-head"><span>🎁 今回のおまけ</span><span class="pr">PR</span></div>
-    <div class="omake-body">
-      <div class="omake-emoji" id="omakeEmoji"></div>
-      <div>
-        <div class="omake-name" id="omakeName"></div>
-        <div class="omake-comment" id="omakeComment"></div>
-      </div>
+    <div class="omake-emoji" id="omakeEmoji"></div>
+    <div class="omake-text">
+      <div class="omake-head">🎁 今回のおまけ<span class="pr">PR</span></div>
+      <div class="omake-name" id="omakeName"></div>
+      <div class="omake-comment" id="omakeComment"></div>
     </div>
-    <a class="omake-btn" id="omakeLink" href="#" target="_blank" rel="noopener sponsored">見てみる ›</a>
+    <a class="omake-btn" id="omakeLink" href="#" target="_blank" rel="noopener sponsored">見てみる</a>
   </div>
+
   <p class="msg" id="msg" hidden></p>
 
   <div class="tip" id="tip" hidden>
-    <p>わんこガチャが気に入ったら<br>応援していただけるとうれしいです🐾</p>
+    <p>わんこガチャが気に入ったら<br>応援してもらえるとうれしいな🐾</p>
     <a id="tipLink" href="#" target="_blank" rel="noopener">☕ 応援する</a>
   </div>
 
   <footer>
-    <p>このサイトは YouTube API サービスを利用しています。動画はすべて YouTube 上のもので、著作権は各投稿者に帰属します。</p>
+    <p>このサイトは YouTube API サービスを使っているよ。動画はぜんぶ YouTube にあるもので、著作権はそれぞれの投稿者のものだよ。</p>
     <p>
       <a href="privacy.html">利用規約・プライバシーポリシー</a> ／
       <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube 利用規約</a> ／
@@ -119,35 +143,78 @@
 // ===== ここを書き換えてください =====
 const TIP_URL = "";      // 投げ銭ページのURL(例: "https://ofuse.me/xxxx")。空のままならボタンは表示されません
 const CONTACT_URL = "";  // お問い合わせ用のXのURL(例: "https://x.com/xxxx")。空のままなら表示されません
+const REPORT_FORM_URL = "";  // 「犬じゃなかった」を集めるGoogleフォームの「事前入力したURL」。空のままなら送信しません
 // ====================================
-if(TIP_URL){ document.getElementById("tipLink").href = TIP_URL; document.getElementById("tip").hidden = false; }
-if(CONTACT_URL){ document.getElementById("contactLink").href = CONTACT_URL; document.getElementById("contact").hidden = false; }
+const $ = id => document.getElementById(id);
+if(TIP_URL){ $("tipLink").href = TIP_URL; $("tip").hidden = false; }
+if(CONTACT_URL){ $("contactLink").href = CONTACT_URL; $("contact").hidden = false; }
 
 const isMobile = matchMedia("(pointer:coarse)").matches || /iPhone|iPad|Android/i.test(navigator.userAgent);
-let all = [], maxViews = 1000, region = "all", next = null;
+let all = [], maxViews = 1000, region = "all", next = null, current = null;
 
 function store(k, v){ try{ if(v===undefined) return JSON.parse(localStorage.getItem(k)||"null"); localStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } }
+function session(k, v){ try{ if(v===undefined) return JSON.parse(sessionStorage.getItem(k)||"null"); sessionStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } }
 const seen = new Set(store("wanko-seen") || []);
+const myBlocked = new Set(store("wanko-blocked") || []);   // この端末で「犬じゃなかった」にした動画
+let siteBlocked = new Set();                                // blocked.txt に書いた動画(全員共通)
 
-function matches(v){ return v.views <= maxViews && (region === "all" || v.jp); }
+function matches(v){
+  return v.views <= maxViews && (region === "all" || v.jp) && !myBlocked.has(v.id) && !siteBlocked.has(v.id);
+}
 function candidates(){
   const list = all.filter(matches);
   const fresh = list.filter(v => !seen.has(v.id));
-  return fresh.length ? fresh : list;   // 全部見たら最初から
+  return fresh.length ? fresh : list;   // ぜんぶ見たら最初から
 }
 
 function prepare(){
   const list = candidates();
-  const btn = document.getElementById("gacha");
-  document.getElementById("pool").textContent = list.length ? `いま ${all.filter(matches).length.toLocaleString()} 本の中から選ばれます` : "";
-  if(!list.length){ btn.classList.add("off"); document.getElementById("hint").textContent = "動画がありません"; next = null; return; }
+  const btn = $("gacha");
+  if(!list.length){ btn.classList.add("off"); $("hint").textContent = "動画がないみたい"; next = null; return; }
   next = list[Math.floor(Math.random()*list.length)];
   btn.href = "https://www.youtube.com/watch?v=" + next.id;
   btn.classList.remove("off");
-  document.getElementById("hint").textContent = isMobile ? "YouTubeアプリが開きます" : "ここで再生します";
+  $("hint").textContent = isMobile ? "YouTubeアプリで開くよ" : "ここで再生するよ";
 }
 
 function fmtSec(s){ const m = Math.floor(s/60), r = s%60; return m ? `${m}分${r?r+"秒":""}` : `${r}秒`; }
+
+// ===== 動画の詳細 =====
+function showInfo(v){
+  current = v;
+  $("infoTitle").textContent = v.title;
+  $("infoMeta").innerHTML = "";
+  const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = v.jp ? "日本" : "海外";
+  $("infoMeta").appendChild(tag);
+  $("infoMeta").appendChild(document.createTextNode(`${v.channel} ・ 再生${v.views.toLocaleString()}回 ・ ${v.published} ・ ${fmtSec(v.sec)}`));
+  $("infoLink").href = "https://www.youtube.com/watch?v=" + v.id;
+  setBlockedView(myBlocked.has(v.id));
+  $("info").hidden = false;
+}
+function setBlockedView(on){
+  $("info").classList.toggle("blocked", on);
+  $("ngBtn").textContent = on ? "↩︎ やっぱり戻す" : "🙅 犬じゃなかった";
+}
+// 「犬じゃなかった」をGoogleフォームに送る(動画IDだけ。1つの動画につき1回まで)
+const reported = new Set(store("wanko-reported") || []);
+function report(id){
+  if(!REPORT_FORM_URL || reported.has(id)) return;
+  try{
+    const u = new URL(REPORT_FORM_URL);
+    const entry = [...u.searchParams.keys()].find(k => k.startsWith("entry."));
+    if(!entry) return;
+    const action = u.origin + u.pathname.replace(/\/viewform$/, "/formResponse");
+    fetch(action, {method:"POST", mode:"no-cors", body:new URLSearchParams({[entry]: id})}).catch(() => {});
+    reported.add(id); store("wanko-reported", [...reported].slice(-3000));
+  }catch(e){}
+}
+$("ngBtn").addEventListener("click", () => {
+  if(!current) return;
+  if(myBlocked.has(current.id)) myBlocked.delete(current.id); else { myBlocked.add(current.id); report(current.id); }
+  store("wanko-blocked", [...myBlocked]);
+  setBlockedView(myBlocked.has(current.id));
+  prepare();
+});
 
 // ===== おまけ(アフィリエイト) =====
 let goods = [];
@@ -158,56 +225,42 @@ function goodsUrl(g, tag){
 }
 function showOmake(g){
   if(!g) return;
-  document.getElementById("omakeEmoji").textContent = g.emoji || "🎁";
-  document.getElementById("omakeName").textContent = g.name;
-  document.getElementById("omakeComment").textContent = g.comment || "";
-  document.getElementById("omakeLink").href = g.link;
-  document.getElementById("omake").hidden = false;
+  $("omakeEmoji").textContent = g.emoji || "🎁";
+  $("omakeName").textContent = g.name;
+  $("omakeComment").textContent = g.comment || "";
+  $("omakeLink").href = g.link;
+  $("omake").hidden = false;
 }
 function pickOmake(){ return goods.length ? goods[Math.floor(Math.random()*goods.length)] : null; }
-function session(k, v){ try{ if(v===undefined) return JSON.parse(sessionStorage.getItem(k)||"null"); sessionStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } }
 
-function showInfo(v){
-  const el = document.getElementById("info");
-  el.innerHTML = "";
-  const t = document.createElement("div"); t.className = "t"; t.textContent = v.title; el.appendChild(t);
-  const m = document.createElement("div"); m.className = "m";
-  const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = v.jp ? "日本" : "海外"; m.appendChild(tag);
-  m.appendChild(document.createTextNode(`${v.channel} ・ 再生 ${v.views.toLocaleString()} 回 ・ ${v.published} 投稿 ・ ${fmtSec(v.sec)}`));
-  el.appendChild(m);
-  const a = document.createElement("a"); a.href = "https://www.youtube.com/watch?v=" + v.id; a.target = "_blank"; a.rel = "noopener";
-  a.textContent = "YouTubeで開く ›"; el.appendChild(a);
-  el.hidden = false;
-}
-
-document.getElementById("gacha").addEventListener("click", e => {
+// ===== まわす =====
+$("gacha").addEventListener("click", e => {
   if(!next) { e.preventDefault(); return; }
   const v = next;
   seen.add(v.id); store("wanko-seen", [...seen].slice(-3000));
   const g = pickOmake();
+  showInfo(v);
   showOmake(g);
   session("wanko-last", {v, g});
   if(isMobile){
-    // スマホ: 先に情報とおまけを表示してから、リンクでYouTubeアプリへ
-    showInfo(v);
-    // スマホ: リンクをそのまま開く → YouTubeアプリが起動
+    // スマホ: 詳細とおまけを出してから、そのままリンクでYouTubeアプリへ
     setTimeout(prepare, 300);
     return;
   }
   // PC: このページの中で再生
   e.preventDefault();
-  const frame = document.getElementById("frame");
+  const frame = $("frame");
   frame.innerHTML = "";
   const f = document.createElement("iframe");
   f.src = `https://www.youtube-nocookie.com/embed/${v.id}?autoplay=1&rel=0`;
   f.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
   f.allowFullscreen = true;
   frame.appendChild(f);
-  document.getElementById("player").hidden = false;
-  showInfo(v);
+  $("player").hidden = false;
   prepare();
 });
 
+// ===== 切り替え =====
 function selectRegion(r){
   region = r;
   document.querySelectorAll("#region button").forEach(x => x.classList.toggle("on", x.dataset.region === r));
@@ -215,38 +268,43 @@ function selectRegion(r){
 }
 selectRegion(store("wanko-region") || "all");
 document.querySelectorAll("#region button").forEach(b => b.addEventListener("click", () => { selectRegion(b.dataset.region); prepare(); }));
-
 document.querySelectorAll("#rarity button").forEach(b => b.addEventListener("click", () => {
   document.querySelectorAll("#rarity button").forEach(x => x.classList.toggle("on", x === b));
   maxViews = Number(b.dataset.max);
   prepare();
 }));
 
+// ===== 読み込み =====
 fetch("goods.json?t=" + Date.now())
   .then(r => r.ok ? r.json() : {})
   .then(d => {
     const tag = (d && d.amazonTag || "").trim();
     goods = ((d && d.items) || []).map(g => ({...g, link: goodsUrl(g, tag)})).filter(g => g.link && g.name);
-    if(tag) document.getElementById("amazonNote").hidden = false;
+    if(tag) $("amazonNote").hidden = false;
   })
   .catch(() => {});
 
-// YouTubeから戻ってきたとき、さっきの動画とおまけをもう一度表示する
+// YouTubeから戻ってきたとき、さっきの動画とおまけをもう一度出す
 const last = session("wanko-last");
 if(last && last.v){ showInfo(last.v); if(last.g) showOmake(last.g); }
 
-fetch("videos.json?t=" + Date.now())
-  .then(r => r.ok ? r.json() : [])
-  .then(list => {
-    all = Array.isArray(list) ? list : [];
-    if(!all.length){
-      const msg = document.getElementById("msg");
-      msg.textContent = "まだ動画が集まっていません。GitHubの「Actions」から収集を実行してください。";
-      msg.hidden = false;
-    }
-    prepare();
-  })
-  .catch(() => { document.getElementById("hint").textContent = "読み込みに失敗しました"; });
+Promise.all([
+  fetch("videos.json?t=" + Date.now()).then(r => r.ok ? r.json() : []),
+  fetch("blocked.txt?t=" + Date.now()).then(r => r.ok ? r.text() : "").catch(() => "")
+]).then(([list, blocked]) => {
+  all = Array.isArray(list) ? list : [];
+  // 1行に1本。動画IDでもYouTubeのURLでもOK。「#」から後ろはメモ
+  siteBlocked = new Set(blocked.split(/\r?\n/).map(l => {
+    l = l.split("#")[0].trim();
+    const m = l.match(/(?:v=|youtu\.be\/|shorts\/)([\w-]{11})/);
+    return m ? m[1] : l;
+  }).filter(Boolean));
+  if(!all.length){
+    $("msg").textContent = "まだ動画が集まってないみたい。GitHubの「Actions」から収集を動かしてね。";
+    $("msg").hidden = false;
+  }
+  prepare();
+}).catch(() => { $("hint").textContent = "読み込みに失敗しちゃった"; });
 </script>
 </body>
 </html>
