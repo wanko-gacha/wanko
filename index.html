@@ -44,6 +44,14 @@
   .tip{margin-top:40px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 16px}
   .tip p{margin:0 0 12px;font-size:13px;color:var(--sub);line-height:1.7}
   .tip a{display:inline-block;background:var(--ink);color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:10px 22px;border-radius:999px}
+  .omake{margin-top:14px;background:#fff;border:2px dashed var(--accent2);border-radius:16px;padding:14px 16px;text-align:left}
+  .omake-head{display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:700;color:#b4532a}
+  .omake .pr{font-size:10px;color:var(--sub);border:1px solid var(--line);border-radius:4px;padding:0 6px}
+  .omake-body{display:flex;gap:12px;align-items:center;margin:10px 0 12px}
+  .omake-emoji{font-size:40px;line-height:1}
+  .omake-name{font-size:16px;font-weight:700}
+  .omake-comment{font-size:12px;color:var(--sub);margin-top:2px}
+  .omake-btn{display:block;text-align:center;background:var(--accent);color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:10px;border-radius:999px}
   footer{margin-top:40px;padding-top:18px;border-top:1px dashed var(--line);font-size:11px;color:var(--sub);line-height:1.8}
   footer p{margin:0 0 6px}
   footer a{color:var(--sub)}
@@ -76,10 +84,22 @@
     <div class="frame" id="frame"></div>
   </div>
   <div class="info" id="info" hidden></div>
+
+  <div class="omake" id="omake" hidden>
+    <div class="omake-head"><span>🎁 今回のおまけ</span><span class="pr">PR</span></div>
+    <div class="omake-body">
+      <div class="omake-emoji" id="omakeEmoji"></div>
+      <div>
+        <div class="omake-name" id="omakeName"></div>
+        <div class="omake-comment" id="omakeComment"></div>
+      </div>
+    </div>
+    <a class="omake-btn" id="omakeLink" href="#" target="_blank" rel="noopener sponsored">見てみる ›</a>
+  </div>
   <p class="msg" id="msg" hidden></p>
 
   <div class="tip" id="tip" hidden>
-    <p>良いわんこに出会えたら<br>応援してね🐾</p>
+    <p>わんこガチャが気に入ったら<br>応援していただけるとうれしいです🐾</p>
     <a id="tipLink" href="#" target="_blank" rel="noopener">☕ 応援する</a>
   </div>
 
@@ -90,13 +110,14 @@
       <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube 利用規約</a> ／
       <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google プライバシーポリシー</a>
     </p>
+    <p id="amazonNote" hidden>Amazonのアソシエイトとして、わんこガチャは適格販売により収入を得ています。「おまけ」のリンクは広告(アフィリエイトリンク)です。</p>
     <p id="contact" hidden><a id="contactLink" href="#" target="_blank" rel="noopener">お問い合わせ(X)</a></p>
   </footer>
 </main>
 
 <script>
 // ===== ここを書き換えてください =====
-const TIP_URL = "https://ofuse.me/644097d7";      // 投げ銭ページのURL(例: "https://ofuse.me/xxxx")。空のままならボタンは表示されません
+const TIP_URL = "";      // 投げ銭ページのURL(例: "https://ofuse.me/xxxx")。空のままならボタンは表示されません
 const CONTACT_URL = "";  // お問い合わせ用のXのURL(例: "https://x.com/xxxx")。空のままなら表示されません
 // ====================================
 if(TIP_URL){ document.getElementById("tipLink").href = TIP_URL; document.getElementById("tip").hidden = false; }
@@ -128,6 +149,24 @@ function prepare(){
 
 function fmtSec(s){ const m = Math.floor(s/60), r = s%60; return m ? `${m}分${r?r+"秒":""}` : `${r}秒`; }
 
+// ===== おまけ(アフィリエイト) =====
+let goods = [];
+function goodsUrl(g, tag){
+  if(g.url) return g.url;
+  if(tag && g.keyword) return "https://www.amazon.co.jp/s?k=" + encodeURIComponent(g.keyword) + "&tag=" + encodeURIComponent(tag);
+  return "";
+}
+function showOmake(g){
+  if(!g) return;
+  document.getElementById("omakeEmoji").textContent = g.emoji || "🎁";
+  document.getElementById("omakeName").textContent = g.name;
+  document.getElementById("omakeComment").textContent = g.comment || "";
+  document.getElementById("omakeLink").href = g.link;
+  document.getElementById("omake").hidden = false;
+}
+function pickOmake(){ return goods.length ? goods[Math.floor(Math.random()*goods.length)] : null; }
+function session(k, v){ try{ if(v===undefined) return JSON.parse(sessionStorage.getItem(k)||"null"); sessionStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } }
+
 function showInfo(v){
   const el = document.getElementById("info");
   el.innerHTML = "";
@@ -145,7 +184,12 @@ document.getElementById("gacha").addEventListener("click", e => {
   if(!next) { e.preventDefault(); return; }
   const v = next;
   seen.add(v.id); store("wanko-seen", [...seen].slice(-3000));
+  const g = pickOmake();
+  showOmake(g);
+  session("wanko-last", {v, g});
   if(isMobile){
+    // スマホ: 先に情報とおまけを表示してから、リンクでYouTubeアプリへ
+    showInfo(v);
     // スマホ: リンクをそのまま開く → YouTubeアプリが起動
     setTimeout(prepare, 300);
     return;
@@ -177,6 +221,19 @@ document.querySelectorAll("#rarity button").forEach(b => b.addEventListener("cli
   maxViews = Number(b.dataset.max);
   prepare();
 }));
+
+fetch("goods.json?t=" + Date.now())
+  .then(r => r.ok ? r.json() : {})
+  .then(d => {
+    const tag = (d && d.amazonTag || "").trim();
+    goods = ((d && d.items) || []).map(g => ({...g, link: goodsUrl(g, tag)})).filter(g => g.link && g.name);
+    if(tag) document.getElementById("amazonNote").hidden = false;
+  })
+  .catch(() => {});
+
+// YouTubeから戻ってきたとき、さっきの動画とおまけをもう一度表示する
+const last = session("wanko-last");
+if(last && last.v){ showInfo(last.v); if(last.g) showOmake(last.g); }
 
 fetch("videos.json?t=" + Date.now())
   .then(r => r.ok ? r.json() : [])
