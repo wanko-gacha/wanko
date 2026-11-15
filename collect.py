@@ -22,7 +22,7 @@ OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "videos.json")
 API = "https://www.googleapis.com/youtube/v3/"
 
 # 「犬じゃなかった」の集計(Googleスプレッドシートを「ウェブに公開」したCSVのURL)
-REPORT_CSV_URL = ""       # 例: "https://docs.google.com/spreadsheets/d/e/xxxx/pub?gid=0&single=true&output=csv"
+REPORT_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRn_CHmsI4AWPCVUxjnE4JeP2rXBkKg_m9HeC0n3p1PBjTzQizo7rW3Ngfo_uVktfre4U5riYb8c6VJ/pub?gid=754659049&single=true&output=csv"       # 例: "https://docs.google.com/spreadsheets/d/e/xxxx/pub?gid=0&single=true&output=csv"
 REPORT_THRESHOLD = 2      # この回数以上「犬じゃなかった」が押された動画を除外する
 
 # 検索に使う言葉: (言語コード, 表示名, [検索語])
