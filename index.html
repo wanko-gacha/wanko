@@ -143,7 +143,7 @@
 // ===== ここを書き換えてください =====
 const TIP_URL = "";      // 投げ銭ページのURL(例: "https://ofuse.me/xxxx")。空のままならボタンは表示されません
 const CONTACT_URL = "";  // お問い合わせ用のXのURL(例: "https://x.com/xxxx")。空のままなら表示されません
-const REPORT_FORM_URL = "";  // 「犬じゃなかった」を集めるGoogleフォームの「事前入力したURL」。空のままなら送信しません
+const REPORT_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeOKytNcfs14LaVHlBxl3biCFI9N-pEPpZ2aOSJvhIGVIOnaw/viewform?usp=pp_url&entry.2127648784=test";  // 「犬じゃなかった」を集めるGoogleフォームの「事前入力したURL」。空のままなら送信しません
 // ====================================
 const $ = id => document.getElementById(id);
 if(TIP_URL){ $("tipLink").href = TIP_URL; $("tip").hidden = false; }
